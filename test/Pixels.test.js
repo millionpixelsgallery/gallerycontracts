@@ -10,8 +10,8 @@ describe('Pixels', function () {
 
   it('Should be able to commit to pixels', async function () {
     const hash = ethers.utils.solidityKeccak256(
-      ['uint32[4]', 'bytes32', 'address'],
-      [[10, 10, 10, 10], ethers.utils.formatBytes32String('world!'), buyer.address]
+      ['uint32[4]', 'string', 'address'],
+      [[10, 10, 10, 10], 'world!', buyer.address]
     )
     await p.commitToPixels(hash)
     const commit = await p.commits(hash)
@@ -20,23 +20,17 @@ describe('Pixels', function () {
   })
 
   it('Should not be able to buy pixels without commit', async function () {
-    await expect(
-      p.connect(buyer1).buyPixels([10, 10, 10, 10], ethers.utils.formatBytes32String('world!'))
-    ).to.revertedWith('commit not set')
+    await expect(p.connect(buyer1).buyPixels([10, 10, 10, 10], 'world!')).to.revertedWith('commit not set')
 
-    await expect(p.buyPixels([10, 10, 10, 10], ethers.utils.formatBytes32String('world'))).to.revertedWith(
-      'commit not set'
-    )
-    await expect(p.buyPixels([10, 10, 10, 10], ethers.utils.formatBytes32String('world!'))).to.revertedWith(
-      'Pixels: invalid payment'
-    )
+    await expect(p.buyPixels([10, 10, 10, 10], 'world')).to.revertedWith('commit not set')
+    await expect(p.buyPixels([10, 10, 10, 10], 'world!')).to.revertedWith('Pixels: invalid payment')
   })
 
   it('Should be able to buy pixels', async function () {
     const cost = await p.pixelsCost([10, 10, 10, 10])
 
     await expect(
-      p.buyPixels([10, 10, 10, 10], ethers.utils.formatBytes32String('world!'), {
+      p.buyPixels([10, 10, 10, 10], 'world!', {
         value: cost,
       })
     ).to.not.reverted
@@ -83,27 +77,27 @@ describe('Pixels', function () {
 
   it('Should not be able to buy pixels when intersecting pixels bought after commit', async function () {
     const hash = ethers.utils.solidityKeccak256(
-      ['uint32[4]', 'bytes32', 'address'],
-      [[20, 20, 10, 10], ethers.utils.formatBytes32String('world!'), buyer.address]
+      ['uint32[4]', 'string', 'address'],
+      [[20, 20, 10, 10], 'world!', buyer.address]
     )
     await p.commitToPixels(hash)
 
     const hash2 = ethers.utils.solidityKeccak256(
-      ['uint32[4]', 'bytes32', 'address'],
-      [[20, 20, 5, 5], ethers.utils.formatBytes32String('world!'), buyer1.address]
+      ['uint32[4]', 'string', 'address'],
+      [[20, 20, 5, 5], 'world!', buyer1.address]
     )
 
     await p.connect(buyer1).commitToPixels(hash2)
     const cost = await p.pixelsCost([20, 20, 5, 5])
 
     await expect(
-      p.connect(buyer1).buyPixels([20, 20, 5, 5], ethers.utils.formatBytes32String('world!'), {
+      p.connect(buyer1).buyPixels([20, 20, 5, 5], 'world!', {
         value: cost,
       })
     ).to.not.reverted
 
     await expect(
-      p.buyPixels([20, 20, 10, 10], ethers.utils.formatBytes32String('world!'), {
+      p.buyPixels([20, 20, 10, 10], 'world!', {
         value: await p.pixelsCost([20, 20, 10, 10]),
       })
     ).to.revertedWith('revert buy failed. intersection found')
@@ -111,14 +105,14 @@ describe('Pixels', function () {
 
   it('Should be able to buy intersecting pixels', async function () {
     const hash2 = ethers.utils.solidityKeccak256(
-      ['uint32[4]', 'bytes32', 'address'],
-      [[20, 20, 5, 5], ethers.utils.formatBytes32String('world!'), buyer.address]
+      ['uint32[4]', 'string', 'address'],
+      [[20, 20, 5, 5], 'world!', buyer.address]
     )
     await p.connect(buyer).commitToPixels(hash2)
     const cost = await p.pixelsCost([20, 20, 5, 5])
 
     await expect(
-      p.connect(buyer).buyPixels([20, 20, 5, 5], ethers.utils.formatBytes32String('world!'), {
+      p.connect(buyer).buyPixels([20, 20, 5, 5], 'world!', {
         value: cost,
       })
     ).to.not.reverted
@@ -134,7 +128,7 @@ describe('Pixels', function () {
     await expect(p.removeFraud([2], [1])).to.not.revertedWith
     await expect(p.ownerOf(2)).to.revertedWith('ERC721: owner query for nonexistent token')
     const deleted = await p.areas(2)
-    expect(deleted.ipfs).to.equal(ethers.constants.HashZero)
+    expect(deleted.ipfs).to.equal('')
     expect(deleted.mintedAtBlock).to.equal(0)
   })
 
@@ -161,7 +155,7 @@ describe('Pixels', function () {
 
   it('Should be able to buy area on sale', async function () {
     await expect(p.connect(buyer1).sell(1, ethers.utils.parseEther('1'), 7)).to.not.reverted
-    const newHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('test'))
+    const newHash = 'testipfshash1testipfshash1testipfshash1'
     await expect(p.buy(1, newHash)).to.revertedWith('payment too low')
     await expect(p.buy(1, newHash, { value: ethers.utils.parseEther('1') })).to.not.reverted
     const area = await p.areas(1)
@@ -170,7 +164,7 @@ describe('Pixels', function () {
   })
 
   it('Should be able to change ipfs', async function () {
-    const newHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('testipfs'))
+    const newHash = 'testipfshash1testipfshash1testipfshash2'
     await expect(p.connect(buyer1).setIPFSHash(1, newHash)).to.revertedWith('only owner')
 
     await p.connect(buyer).setIPFSHash(1, newHash)
@@ -182,7 +176,7 @@ describe('Pixels', function () {
     const balance = await ethers.provider.getBalance(vault.address)
 
     await expect(
-      p.connect(buyer).buyPixels([20, 20, 5, 5], ethers.utils.formatBytes32String('world!'), {
+      p.connect(buyer).buyPixels([20, 20, 5, 5], 'world!', {
         value: cost,
       })
     ).to.not.reverted

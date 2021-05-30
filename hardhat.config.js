@@ -4,7 +4,7 @@ config()
 
 const mnemonic = process.env.MNEMONIC
 const infura_api = process.env.INFURA_API
-
+const pkey = process.env.PKEY
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
 task('accounts', 'Prints the list of accounts', async () => {
@@ -34,7 +34,7 @@ module.exports = {
   networks: {
     rinkeby: {
       url: 'https://rinkeby.infura.io/v3/074defc86881430da33be9151f3beaf8',
-      accounts: { mnemonic },
+      accounts: [pkey],
     },
   },
 }

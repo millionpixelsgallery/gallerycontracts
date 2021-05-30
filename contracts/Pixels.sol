@@ -24,7 +24,7 @@ contract Pixels is ERC721 {
 
     struct Area {
         uint32[4] rect; //0 - X , 1- Y ,2 - width, 3 - height
-        bytes32 ipfs;
+        string ipfs;
         uint64 mintedAtBlock;
     }
 
@@ -109,7 +109,10 @@ contract Pixels is ERC721 {
      * @param area rectangle to generate NFT for
      * @param ipfs the ipfs hash containing display data for the NFT
      */
-    function buyPixels(uint32[4] memory area, bytes32 ipfs) external payable {
+    function buyPixels(uint32[4] memory area, string calldata ipfs)
+        external
+        payable
+    {
         require(
             area[0] + area[2] <= width && area[1] + area[3] <= height,
             "out of bounds"
@@ -158,7 +161,7 @@ contract Pixels is ERC721 {
      * @param id token to buy
      * @param ipfsHash new content to attach to the bought NFT
      */
-    function buy(uint256 id, bytes32 ipfsHash) external payable {
+    function buy(uint256 id, string calldata ipfsHash) external payable {
         Sale memory sale = forSale[id];
         require(isForSale(id), "not for sale");
         require(msg.value >= sale.price, "payment too low");
@@ -173,7 +176,7 @@ contract Pixels is ERC721 {
     /**
      * @dev set a new ipfs hash for token
      */
-    function setIPFSHash(uint256 id, bytes32 ipfsHash) external {
+    function setIPFSHash(uint256 id, string calldata ipfsHash) external {
         require(ERC721.ownerOf(id) == _msgSender(), "only owner can set ipfs");
         areas[id].ipfs = ipfsHash;
     }
@@ -227,7 +230,7 @@ contract Pixels is ERC721 {
 
     function _checkCommit(
         uint32[4] memory area,
-        bytes32 ipfs,
+        string memory ipfs,
         address buyer
     ) internal view {
         //check that area+ipfs+nonce hash = areaHash
