@@ -64,6 +64,13 @@ contract Pixels is ERC721 {
     }
 
     /**
+     * @dev returns areas length
+     */
+    function getAreasCount() public view returns (uint) {
+        return areas.length;
+    }
+
+    /**
      * @dev given a rectangle, returns the cost in ETH
      */
     function pixelsCost(uint32[4] memory area) public view returns (uint256) {
