@@ -5,7 +5,18 @@ describe('Pixels', function () {
   before(async () => {
     ;[buyer, buyer1, seller, fraud, vault, ...signers] = await ethers.getSigners()
     const P = await ethers.getContractFactory('Pixels')
-    p = await P.deploy('https://test.eth.link/areas/area-', vault.address)
+    p = await P.deploy('https://test.eth.link/areas/area-', vault.address, 50, 10)
+  })
+
+  it('Should have correct top,medium area sizes', async function () {
+    expect(await p.MEDIUM(0)).to.equal(475)
+    expect(await p.MEDIUM(1)).to.equal(475)
+    expect(await p.MEDIUM(2)).to.equal(50)
+    expect(await p.MEDIUM(3)).to.equal(50)
+    expect(await p.TOP(0)).to.equal(495)
+    expect(await p.TOP(1)).to.equal(495)
+    expect(await p.TOP(2)).to.equal(10)
+    expect(await p.TOP(3)).to.equal(10)
   })
 
   it('Should be able to commit to pixels', async function () {

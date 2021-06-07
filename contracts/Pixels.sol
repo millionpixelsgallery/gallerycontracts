@@ -4,13 +4,8 @@ pragma solidity >=0.8.0;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 contract Pixels is ERC721 {
-    uint32[4] public MEDIUM = [
-        uint32(475),
-        uint32(475),
-        uint32(50),
-        uint32(50)
-    ];
-    uint32[4] public TOP = [uint32(495), uint32(495), uint32(10), uint32(10)];
+    uint32[4] public MEDIUM;
+    uint32[4] public TOP;
 
     uint32 public width = 1000;
     uint32 public height = 1000;
@@ -41,15 +36,30 @@ contract Pixels is ERC721 {
 
     address private vault;
 
-    constructor(string memory _baseuri, address _vault)
-        ERC721("MillionPixelsGallery", "MPG")
-    {
+    constructor(
+        string memory _baseuri,
+        address _vault,
+        uint32 _medAreaSize,
+        uint32 _topAreaSize
+    ) ERC721("MillionPixelsGallery", "MPG") {
         creator = _msgSender();
         width = 1000;
         height = 1000;
         vault = _vault;
         fee = 375; //3.75 %
         baseURI = _baseuri;
+        MEDIUM = [
+            width / 2 - _medAreaSize / 2,
+            height / 2 - _medAreaSize / 2,
+            _medAreaSize,
+            _medAreaSize
+        ];
+        TOP = [
+            width / 2 - _topAreaSize / 2,
+            height / 2 - _topAreaSize / 2,
+            _topAreaSize,
+            _topAreaSize
+        ];
     }
 
     function _baseURI() internal view override returns (string memory) {
@@ -66,7 +76,7 @@ contract Pixels is ERC721 {
     /**
      * @dev returns areas length
      */
-    function getAreasCount() public view returns (uint) {
+    function getAreasCount() public view returns (uint256) {
         return areas.length;
     }
 
