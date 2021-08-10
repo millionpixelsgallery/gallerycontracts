@@ -4,6 +4,11 @@ pragma solidity >=0.8.0;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 contract Pixels is ERC721 {
+    uint256 public constant TOP_PRICE = 1e16;
+    uint256 public constant MEDIUM_PRICE = 1e15;
+    uint256 public constant LOW_PRICE = 5e14;
+
+    uint32 public constant MAX_PROMOTIONAL_AREAS_SIZE = 100000;
     uint32[4] public MEDIUM;
     uint32[4] public TOP;
 
@@ -16,6 +21,8 @@ contract Pixels is ERC721 {
     address creator;
 
     string public baseURI;
+
+    uint32 public promotionalBought;
 
     struct Area {
         uint32[4] rect; //0 - X , 1- Y ,2 - width, 3 - height
@@ -87,11 +94,10 @@ contract Pixels is ERC721 {
         uint256 topArea = uint256(overlap(area, TOP));
         uint256 medArea = uint256(overlap(area, MEDIUM));
         uint256 regular = uint256(area[2] * area[3]);
-        uint256 cost =
-            topArea *
-                1e17 +
-                ((medArea - topArea) * 1e16) +
-                ((regular - medArea) * 1e15);
+        uint256 cost = topArea *
+            TOP_PRICE +
+            ((medArea - topArea) * MEDIUM_PRICE) +
+            ((regular - medArea) * LOW_PRICE);
 
         return cost;
     }
@@ -113,7 +119,7 @@ contract Pixels is ERC721 {
 
     /**
      * @dev user must call this first before calling buyPixels
-     * @param areaHash keccak256(rect:uint[4], ipfs:byte32, publickey:address)
+     * @param areaHash keccak256(rect:uint[4], commitNonce:uint, publickey:address)
      */
     function commitToPixels(bytes32 areaHash) external {
         require(commits[areaHash] == 0, "commit already set");
@@ -126,17 +132,27 @@ contract Pixels is ERC721 {
      * @param area rectangle to generate NFT for
      * @param ipfs the ipfs hash containing display data for the NFT
      */
-    function buyPixels(uint32[4] memory area, string calldata ipfs)
-        external
-        payable
-    {
+    function buyPixels(
+        uint32[4] memory area,
+        uint256 commitNonce,
+        string calldata ipfs
+    ) external payable {
         require(
             area[0] + area[2] <= width && area[1] + area[3] <= height,
             "out of bounds"
         );
-        _checkCommit(area, ipfs, _msgSender());
-        uint256 cost = pixelsCost(area);
+        _checkCommit(area, commitNonce, _msgSender());
+
+        uint256 cost = _msgSender() == creator ? 0 : pixelsCost(area);
         require(cost <= msg.value, "Pixels: invalid payment");
+
+        if (_msgSender() == creator) {
+            promotionalBought += area[2] * area[3];
+            require(
+                promotionalBought <= MAX_PROMOTIONAL_AREAS_SIZE,
+                "promotional areas exceeds limit"
+            );
+        }
 
         Area memory bought;
         bought.rect = area;
@@ -221,18 +237,16 @@ contract Pixels is ERC721 {
         pure
         returns (uint32)
     {
-        int32 x_overlap =
-            _max(
-                0,
-                _min(int32(obj1[0] + obj1[2]), int32(obj2[0] + obj2[2])) -
-                    _max(int32(obj1[0]), int32(obj2[0]))
-            );
-        int32 y_overlap =
-            _max(
-                0,
-                _min(int32(obj1[1] + obj1[3]), int32(obj2[1] + obj2[3])) -
-                    _max(int32(obj1[1]), int32(obj2[1]))
-            );
+        int32 x_overlap = _max(
+            0,
+            _min(int32(obj1[0] + obj1[2]), int32(obj2[0] + obj2[2])) -
+                _max(int32(obj1[0]), int32(obj2[0]))
+        );
+        int32 y_overlap = _max(
+            0,
+            _min(int32(obj1[1] + obj1[3]), int32(obj2[1] + obj2[3])) -
+                _max(int32(obj1[1]), int32(obj2[1]))
+        );
 
         return uint32(x_overlap * y_overlap);
     }
@@ -247,11 +261,11 @@ contract Pixels is ERC721 {
 
     function _checkCommit(
         uint32[4] memory area,
-        string memory ipfs,
+        uint256 nonce,
         address buyer
     ) internal view {
         //check that area+ipfs+nonce hash = areaHash
-        bytes32 areaHash = keccak256(abi.encodePacked(area, ipfs, buyer));
+        bytes32 areaHash = keccak256(abi.encodePacked(area, nonce, buyer));
         uint256 atBlock = commits[areaHash];
         require(atBlock > 0, "commit not set");
         require(atBlock < block.number, "commit at current block");
