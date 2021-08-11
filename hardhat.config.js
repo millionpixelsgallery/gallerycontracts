@@ -33,8 +33,9 @@ module.exports = {
   },
   networks: {
     rinkeby: {
-      url: 'https://rinkeby.infura.io/v3/074defc86881430da33be9151f3beaf8',
+      url: 'https://rinkeby.infura.io/v3/' + infura_api,
       accounts: [pkey],
+      httpHeaders: { Origin: 'http://localhost' },
     },
   },
 }
