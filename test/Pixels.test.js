@@ -1,11 +1,12 @@
 const { expect } = require('chai')
 
 describe('Pixels', function () {
-  let p, buyer, buyer1, seller, fraud, signers
+  let p, buyer, buyer1, seller, fraud, signers, vault
   before(async () => {
-    ;[buyer, buyer1, seller, fraud, vault, creator, ...signers] = await ethers.getSigners()
+    ;[buyer, buyer1, seller, fraud, creator, ...signers] = await ethers.getSigners()
+    vault = creator
     const P = await ethers.getContractFactory('Pixels')
-    p = await P.connect(creator).deploy('https://test.eth.link/areas/area-', vault.address, 50, 10)
+    p = await P.connect(creator).deploy('https://test.eth.link/areas/area-', creator.address, 50, 10)
     p = p.connect(buyer)
   })
 

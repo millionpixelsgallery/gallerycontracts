@@ -49,7 +49,7 @@ contract Pixels is ERC721 {
         uint32 _medAreaSize,
         uint32 _topAreaSize
     ) ERC721("MillionPixelsGallery", "MPG") {
-        creator = _msgSender();
+        creator = _vault;
         width = 1000;
         height = 1000;
         vault = _vault;
@@ -306,6 +306,11 @@ contract Pixels is ERC721 {
     function setCreator(address _creator) external {
         require(creator == _msgSender(), "only creator can set new creator");
         creator = _creator;
+    }
+
+    function setVault(address _vault) external {
+        require(creator == _msgSender(), "only creator can set new vault");
+        vault = _vault;
     }
 
     function setFee(uint32 _fee) external {
